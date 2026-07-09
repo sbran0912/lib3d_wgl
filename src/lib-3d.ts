@@ -240,4 +240,35 @@ export class Plane {
   sideOf(p: Vec3): number {
     return this.normal.dot(p) + this.distance;
   }
+
+  /**
+   * Berechnet den Schnittpunkt einer Strecke (p1→p2) mit der Ebene.
+   *
+   * @param p1 Startpunkt der Strecke
+   * @param p2 Endpunkt der Strecke
+   * @returns Schnittpunkt (Vec3) oder null, wenn die Strecke die Ebene nicht
+   *          schneidet (parallel zur Ebene oder Schnitt außerhalb der Strecke)
+   *
+   * Beispiel:
+   *   const ground = new Plane(new Vec3(0, 1, 0), 0);
+   *   const hit = ground.intersectLine(
+   *     new Vec3(0, 5, 0),
+   *     new Vec3(0, -5, 0),
+   *   );
+   *   // hit = (0, 0, 0)  ← Schnitt am Boden
+   */
+  intersectLine(p1: Vec3, p2: Vec3): Vec3 | null {
+    const dir = p2.sub(p1);
+    const denom = this.normal.dot(dir);
+
+    // Strecke parallel zur Ebene → kein Schnitt
+    if (Math.abs(denom) < 1e-10) return null;
+
+    const t = -(this.normal.dot(p1) + this.distance) / denom;
+
+    // Schnitt liegt außerhalb der Strecke
+    if (t < 0 || t > 1) return null;
+
+    return p1.add(dir.scale(t));
+  }
 }
