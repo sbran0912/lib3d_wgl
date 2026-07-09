@@ -1,22 +1,104 @@
-/* 
------------------------------------------------------------------
-3D Vektoren und Matrizen
------------------------------------------------------------------*/
 export type Matrix4x4 = number[][];
-export type Vector2 = { x: number, y: number, s: number };  // s = Skalierungsfaktor (für Punktgröße)
+export type Vec2 = { x: number; y: number; s: number }; // s = Skalierungsfaktor (für Punktgröße)
 
-export class Vector3 {
+export class Vec3 {
   x: number;
   y: number;
   z: number;
-  constructor(x: number, y: number, z: number) {
-    this.x= x,  
-    this.y= y,
-    this.z= z
-  } 
 
-  transform(m: Matrix4x4): Vector3 {
-    return new Vector3(
+  constructor(x: number, y: number, z: number) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+
+  // ---- Arithmetik ----
+
+  /** Vektoraddition: this + v */
+  add(v: Vec3): Vec3 {
+    return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z);
+  }
+
+  /** Vektorsubtraktion: this - v */
+  sub(v: Vec3): Vec3 {
+    return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z);
+  }
+
+  /** Skalarmultiplikation: this * s */
+  scale(s: number): Vec3 {
+    return new Vec3(this.x * s, this.y * s, this.z * s);
+  }
+
+  /** Vorzeichen umkehren: -this */
+  negate(): Vec3 {
+    return new Vec3(-this.x, -this.y, -this.z);
+  }
+
+  // ---- Produkte & Betrag ----
+
+  /** Skalarprodukt (dot product): this · v */
+  dot(v: Vec3): number {
+    return this.x * v.x + this.y * v.y + this.z * v.z;
+  }
+
+  /** Kreuzprodukt (cross product): this × v */
+  cross(v: Vec3): Vec3 {
+    return new Vec3(
+      this.y * v.z - this.z * v.y,
+      this.z * v.x - this.x * v.z,
+      this.x * v.y - this.y * v.x,
+    );
+  }
+
+  /** Quadrat der Länge (√-frei, performanter für Vergleiche) */
+  squaredLength(): number {
+    return this.x * this.x + this.y * this.y + this.z * this.z;
+  }
+
+  /** Länge (Betrag) des Vektors */
+  length(): number {
+    return Math.sqrt(this.squaredLength());
+  }
+
+  /** Distanz zu einem anderen Vektor */
+  distanceTo(v: Vec3): number {
+    return this.sub(v).length();
+  }
+
+  // ---- Normalisierung & Interpolation ----
+
+  /** Normalisierung – Einheitsvektor (Länge 1). Nullvektor bleibt null. */
+  normalize(): Vec3 {
+    const len = this.length();
+    return len === 0 ? new Vec3(0, 0, 0) : this.scale(1 / len);
+  }
+
+  /** Lineare Interpolation: this + (v - this) * t  (t = 0 → this, t = 1 → v) */
+  lerp(v: Vec3, t: number): Vec3 {
+    return this.add(v.sub(this).scale(t));
+  }
+
+  // ---- Utility ----
+
+  /** Kopie des Vektors */
+  clone(): Vec3 {
+    return new Vec3(this.x, this.y, this.z);
+  }
+
+  /** Vergleich mit optionaler Toleranz (Default: 1e-10) */
+  equals(v: Vec3, epsilon = 1e-10): boolean {
+    return (
+      Math.abs(this.x - v.x) < epsilon &&
+      Math.abs(this.y - v.y) < epsilon &&
+      Math.abs(this.z - v.z) < epsilon
+    );
+  }
+
+  // ---- Transformation ----
+
+  /** 4x4-Matrix-Transformation */
+  transform(m: Matrix4x4): Vec3 {
+    return new Vec3(
       m[0][0] * this.x + m[0][1] * this.y + m[0][2] * this.z + m[0][3],
       m[1][0] * this.x + m[1][1] * this.y + m[1][2] * this.z + m[1][3],
       m[2][0] * this.x + m[2][1] * this.y + m[2][2] * this.z + m[2][3],
@@ -62,7 +144,7 @@ export function rotateMatrix(ax: number, ay: number, az: number): Matrix4x4 {
 }
 
 // 4x4 Matrixmultiplikation
-export function multMatrix(a: Matrix4x4, b: Matrix4x4):Matrix4x4 {
+export function multMatrix(a: Matrix4x4, b: Matrix4x4): Matrix4x4 {
   const result = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
@@ -79,11 +161,83 @@ export function multMatrix(a: Matrix4x4, b: Matrix4x4):Matrix4x4 {
   return result;
 }
 
-export function project(fov:number, v: Vector3): Vector2 {
-  const s = fov / (fov + v.z);  // Projektionsfaktor
+/** PROJEKTION (3D → 2D Bildschirm)
+ * Projiziert einen 3D-Punkt auf den Bildschirm
+ * @param fov - Field of View (Kamerawinkel)
+ * @param v - 3D-Punkt im Kamerakoordinatensystem
+ * @returns 2D-Bildschirmkoordinaten + Skalierungsfaktor
+ */
+export function project(fov: number, v: Vec3): Vec2 {
+  const s = fov / (fov + v.z); // Projektionsfaktor
   return {
     x: v.x * s,
     y: v.y * s,
-    s,  // Skalierungsfaktor (nützlich z.B. für Punktgröße)
+    s, // Skalierungsfaktor (nützlich z.B. für Punktgröße)
   };
+}
+
+/** EBENE (Plane)
+ * Ebene im 3D-Raum, dargestellt als:
+ * 
+ *   n · x + d = 0
+ * 
+ * wobei:
+ * - n = Normalenvektor (zeigt senkrecht aus der Ebene, muss normiert sein)
+ * - d = Abstand der Ebene vom Ursprung (entlang der Normalenrichtung)
+ * 
+ * KONVENTION: y zeigt nach oben!
+ * - Boden (XZ-Ebene bei y=0): n = (0, 1, 0), d = 0
+ * - Decke (bei y=10): n = (0, -1, 0), d = 10
+ * - Wand (bei x=5): n = (1, 0, 0), d = -5
+ */
+export class Plane {
+  normal: Vec3;   // Normalenvektor (MUSS normiert sein!)
+  distance: number; // d in n·x + d = 0
+
+  constructor(normal: Vec3, distance: number) {
+    this.normal = normal;
+    this.distance = distance;
+  }
+
+    /**
+   * Ebene aus 3 Punkten erstellen
+   * 
+   * Beispiel: Boden (XZ-Ebene bei y=0)
+   *   Plane.fromPoints(
+   *     new Vec3(-1, 0, -1),
+   *     new Vec3(1, 0, -1),
+   *     new Vec3(0, 0, 1)
+   *   )
+   *   → Normalenvektor = (0, 1, 0), d = 0
+   */
+  static fromPoints(a: Vec3, b: Vec3, c: Vec3): Plane {
+    const ab = b.sub(a);
+    const ac = c.sub(a);
+    const normal = ab.cross(ac).normalize();
+    const distance = -normal.dot(a);
+    return new Plane(normal, distance);
+  }
+
+  /**
+   * Prüft, ob ein Punkt auf der Ebene liegt (mit Toleranz)
+   * 
+   * Beispiel:
+   *   const ground = new Plane(new Vec3(0, 1, 0), 0);
+   *   ground.containsPoint(new Vec3(1, 0, 2)); // true (auf dem Boden)
+   *   ground.containsPoint(new Vec3(1, 5, 2)); // false (über dem Boden)
+   */
+  containsPoint(p: Vec3, epsilon = 1e-6): boolean {
+    return Math.abs(this.normal.dot(p) + this.distance) < epsilon;
+  }
+
+  /**
+   * Gibt zurück, auf welcher Seite der Ebene ein Punkt liegt
+   * 
+   * @returns > 0 → Vorderseite (in Richtung des Normalenvektors)
+   *          = 0 → auf der Ebene
+   *          < 0 → Rückseite (entgegen der Normalenrichtung)
+   */
+  sideOf(p: Vec3): number {
+    return this.normal.dot(p) + this.distance;
+  }
 }

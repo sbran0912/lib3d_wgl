@@ -12,7 +12,7 @@ const sphere2Points = createSphere(60, 16, 10);
 
 let angleX = 0;
 let angleY = 0;
-let orbitAngle = 0;  // Winkel für die Orbitalbewegung
+let orbitAngle = 0; // Winkel für die Orbitalbewegung
 
 function draw() {
   wgl.background(15, 15, 30);
@@ -27,7 +27,7 @@ function draw() {
   // === Kugel 2 (klein, orange) – kreist um Kugel 1 (Y-Achse) ===
   const orbitRadius = 200;
   const ox = Math.cos(orbitAngle) * orbitRadius;
-  const oz = 100 + Math.sin(orbitAngle) * orbitRadius;  // Orbit in XZ-Ebene
+  const oz = 100 + Math.sin(orbitAngle) * orbitRadius; // Orbit in XZ-Ebene
 
   const M2 = l3d.multMatrix(
     l3d.translateMatrix(ox, 0, oz),
@@ -37,7 +37,7 @@ function draw() {
 
   angleX += 0.005;
   angleY += 0.008;
-  orbitAngle += 0.01;  // Orbital-Geschwindigkeit
+  orbitAngle += 0.01; // Orbital-Geschwindigkeit
 }
 
 wgl.init(SCREEN_W, SCREEN_H);

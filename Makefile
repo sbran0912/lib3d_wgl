@@ -1,6 +1,6 @@
 .PHONY: all dev build clean
 
-all: build
+all: dev
 
 dev:
 	bun index.html
