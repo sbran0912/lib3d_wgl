@@ -1,78 +1,61 @@
 import * as wgl from "./lib-wgl.ts";
 import * as l3d from "./lib-3d.ts";
-import {
-  createSphere, drawSphere,
-  createBox, drawBox,
-  createCylinder, drawCylinder,
-  createCone, drawCone,
-  createTorus, drawTorus,
-} from "./lib-geom.ts";
+import { createSphere, drawSphere, createCube, drawCube, createCylinder, drawCylinder } from "./lib-solids.ts";
 
-const SCREEN_W = 900;
-const SCREEN_H = 600;
-const FOV = 400;
+const SCREEN_W = 600;
+const SCREEN_H = 400;
+const FOV = 300;
 
-// Figuren-Parameter
-const SPHERE_RADIUS = 38;
-const CYL_RADIUS = 30;
-const CYL_HEIGHT = 60;
-const CONE_RADIUS = 30;
-const CONE_HEIGHT = 70;
-const TORUS_MAJOR = 50;
-const TORUS_MINOR = 20;
+// Zwei Kugeln mit unterschiedlicher Größe
+const sphere1Points = createSphere(100, 20, 12);
+const sphere2Points = createSphere(60, 16, 10);
 
-// Figuren erzeugen (einmalig)
-const spherePts = createSphere(SPHERE_RADIUS, 20, 12);
-const boxPts = createBox(60, 60, 60);
-const cylPts = createCylinder(CYL_RADIUS, CYL_HEIGHT, 20, 8);
-const conePts = createCone(CONE_RADIUS, CONE_HEIGHT, 20, 8);
-const torusPts = createTorus(TORUS_MAJOR, TORUS_MINOR, 24, 16);
+// Würfel & Zylinder
+const cubePoints   = createCube(120);
+const cylPoints    = createCylinder(70, 140, 20, 4);
 
-// Zeit für Animation
-let time = 0;
+let angleX = 0;
+let angleY = 0;
+let orbitAngle = 0; // Winkel für die Orbitalbewegung
 
 function draw() {
-  time += 0.02;
   wgl.background(15, 15, 30);
 
-  // Basis-Rotation (alle Figuren rotieren gleich)
-  const rotY = time * 0.6;
-  const rotX = Math.sin(time * 0.3) * 0.3;
-
-  // --- SPHERE (links oben) ---
-  const m1 = l3d.multMatrix(
-    l3d.translateMatrix(-180, 130, 0),
-    l3d.rotateMatrix(rotX, rotY, 0),
+  // === Kugel 1 (groß, blau) – mittig ===
+  const M1 = l3d.multMatrix(
+    l3d.translateMatrix(0, 0, 100),
+    l3d.rotateMatrix(angleX * 0.8, angleY * 1.2, 0),
   );
-  drawSphere(spherePts, m1, FOV, { r: 100, g: 180, b: 255 });
+  drawSphere(sphere1Points, M1, FOV, { r: 100, g: 180, b: 255 });
 
-  // --- BOX (rechts oben) ---
-  const m2 = l3d.multMatrix(
-    l3d.translateMatrix(180, 130, 0),
-    l3d.rotateMatrix(rotX, rotY, 0),
-  );
-  drawBox(boxPts, m2, FOV, { r: 255, g: 220, b: 100 });
+  // === Kugel 2 (klein, orange) – kreist um Kugel 1 (Y-Achse) ===
+  const orbitRadius = 200;
+  const ox = Math.cos(orbitAngle) * orbitRadius;
+  const oz = 100 + Math.sin(orbitAngle) * orbitRadius; // Orbit in XZ-Ebene
 
-  // --- CYLINDER (links unten) ---
-  const m3 = l3d.multMatrix(
-    l3d.translateMatrix(-180, -130, 0),
-    l3d.rotateMatrix(rotX, rotY, 0),
+  const M2 = l3d.multMatrix(
+    l3d.translateMatrix(ox, 0, oz),
+    l3d.rotateMatrix(angleX * 1.5, angleY * 0.7, 0),
   );
-  drawCylinder(cylPts, m3, FOV, { r: 120, g: 220, b: 140 });
+  drawSphere(sphere2Points, M2, FOV, { r: 255, g: 180, b: 80 });
 
-  // --- CONE (mitte unten) ---
-  const m4 = l3d.multMatrix(
-    l3d.translateMatrix(0, -130, 0),
-    l3d.rotateMatrix(rotX, rotY, 0),
+  // === Würfel (links, grün) ===
+  const M3 = l3d.multMatrix(
+    l3d.translateMatrix(-180, 0, 100),
+    l3d.rotateMatrix(angleX * 1.1, angleY * 0.9, angleX * 0.3),
   );
-  drawCone(conePts, m4, FOV, { r: 255, g: 160, b: 100 });
+  drawCube(cubePoints, M3, FOV, { r: 140, g: 255, b: 140 });
 
-  // --- TORUS (rechts unten) ---
-  const m5 = l3d.multMatrix(
-    l3d.translateMatrix(180, -130, 0),
-    l3d.rotateMatrix(rotX, rotY, 0),
+  // === Zylinder (rechts, gelb) ===
+  const M4 = l3d.multMatrix(
+    l3d.translateMatrix(180, 0, 100),
+    l3d.rotateMatrix(angleX * 0.7, angleY * 1.3, 0),
   );
-  drawTorus(torusPts, m5, FOV, { r: 200, g: 150, b: 255 });
+  drawCylinder(cylPoints, M4, FOV, { r: 255, g: 220, b: 120 });
+
+  angleX += 0.005;
+  angleY += 0.008;
+  orbitAngle += 0.01; // Orbital-Geschwindigkeit
 }
 
 wgl.init(SCREEN_W, SCREEN_H);
