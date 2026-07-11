@@ -1,0 +1,40 @@
+import * as wgl from "./lib-wgl.ts";
+
+const W = 600;
+const H = 400;
+
+const radius = 50;
+const triSize = 60;
+const amplitude = 250; // max. Auslenkung aus der Mitte
+
+let t = 0; // Phasenwinkel
+
+function draw() {
+  wgl.background(15, 15, 30);
+
+  // Sinus-Bewegung horizontal
+  const tx = Math.sin(t * 0.02) * amplitude;
+  const cx = Math.sin(t * 0.01 + 2) * amplitude;
+
+  // --- Dreieck (fill, rot) ---
+  wgl.fillColor(220, 80, 80);
+  wgl.strokeColor(255, 150, 150);
+  wgl.strokeWidth(2);
+  wgl.triangle(
+    tx,      H / 2 - triSize,
+    tx - triSize, H / 2 + triSize,
+    tx + triSize, H / 2 + triSize,
+    2,
+  );
+
+  // --- Kreis (fill, blau) ---
+  wgl.fillColor(15, 15, 30);
+  wgl.strokeColor(150, 200, 255);
+  wgl.strokeWidth(2);
+  wgl.circle(cx, -H / 2 + radius, radius, 2);
+
+  t++;
+}
+
+wgl.init(W, H);
+wgl.startAnimation(draw);
