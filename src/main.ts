@@ -1,18 +1,25 @@
 import * as wgl from "./lib-wgl.ts";
 import * as l3d from "./lib-3d.ts";
-import { createSphere, drawSphere, createCube, drawCube, createCylinder, drawCylinder } from "./lib-solids.ts";
+import { createSphere, drawSphere, createBox, drawBox } from "./lib-solids.ts";
 
 const SCREEN_W = 600;
 const SCREEN_H = 400;
 const FOV = 300;
 
+// === Kamera-Perspektive ===
+// Position der Kamera im Raum – einfach hier im Code ändern für andere Blickwinkel
+const CAM_POS    = new l3d.Vec3(300, 150, -300);  // leicht von rechts oben (Standard)
+const CAM_TARGET = new l3d.Vec3(0, 0, 100);        // Ziel = Mitte der Szene
+const CAM_UP     = new l3d.Vec3(0, 1, 0);           // Y zeigt nach oben
+
+const viewMatrix = l3d.lookAtMatrix(CAM_POS, CAM_TARGET, CAM_UP);
+
 // Zwei Kugeln mit unterschiedlicher Größe
 const sphere1Points = createSphere(100, 20, 12);
 const sphere2Points = createSphere(60, 16, 10);
 
-// Würfel & Zylinder
-const cubePoints   = createCube(120);
-const cylPoints    = createCylinder(70, 140, 20, 4);
+// Quader (breite Grundplatte)
+const boxPoints = createBox(300, 40, 200);
 
 let angleX = 0;
 let angleY = 0;
@@ -23,8 +30,11 @@ function draw() {
 
   // === Kugel 1 (groß, blau) – mittig ===
   const M1 = l3d.multMatrix(
-    l3d.translateMatrix(0, 0, 100),
-    l3d.rotateMatrix(angleX * 0.8, angleY * 1.2, 0),
+    viewMatrix,
+    l3d.multMatrix(
+      l3d.translateMatrix(0, 0, 100),
+      l3d.rotateMatrix(angleX * 0.8, angleY * 1.2, 0),
+    ),
   );
   drawSphere(sphere1Points, M1, FOV, { r: 100, g: 180, b: 255 });
 
@@ -34,24 +44,23 @@ function draw() {
   const oz = 100 + Math.sin(orbitAngle) * orbitRadius; // Orbit in XZ-Ebene
 
   const M2 = l3d.multMatrix(
-    l3d.translateMatrix(ox, 0, oz),
-    l3d.rotateMatrix(angleX * 1.5, angleY * 0.7, 0),
+    viewMatrix,
+    l3d.multMatrix(
+      l3d.translateMatrix(ox, 0, oz),
+      l3d.rotateMatrix(angleX * 1.5, angleY * 0.7, 0),
+    ),
   );
   drawSphere(sphere2Points, M2, FOV, { r: 255, g: 180, b: 80 });
 
-  // === Würfel (links, grün) ===
+  // === Quader (Grundplatte, lila) ===
   const M3 = l3d.multMatrix(
-    l3d.translateMatrix(-180, 0, 100),
-    l3d.rotateMatrix(angleX * 1.1, angleY * 0.9, angleX * 0.3),
+    viewMatrix,
+    l3d.multMatrix(
+      l3d.translateMatrix(0, -100, 100),
+      l3d.rotateMatrix(0, angleY * 0.5, 0),
+    ),
   );
-  drawCube(cubePoints, M3, FOV, { r: 140, g: 255, b: 140 });
-
-  // === Zylinder (rechts, gelb) ===
-  const M4 = l3d.multMatrix(
-    l3d.translateMatrix(180, 0, 100),
-    l3d.rotateMatrix(angleX * 0.7, angleY * 1.3, 0),
-  );
-  drawCylinder(cylPoints, M4, FOV, { r: 255, g: 220, b: 120 });
+  drawBox(boxPoints, M3, FOV, { r: 200, g: 150, b: 255 });
 
   angleX += 0.005;
   angleY += 0.008;

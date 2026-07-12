@@ -161,6 +161,36 @@ export function multMatrix(a: Matrix4x4, b: Matrix4x4): Matrix4x4 {
   return result;
 }
 
+/** LOOKAT-MATRIX (View-Matrix)
+ * Erzeugt eine 4x4-Matrix, die Weltkoordinaten in Kamerakoordinaten transformiert.
+ *
+ * @param cameraPos  Position der Kamera im Weltraum
+ * @param target     Punkt, den die Kamera anschaut
+ * @param up         Vektor, der "oben" definiert (muss nicht normiert sein)
+ * @returns 4x4-View-Matrix
+ *
+ * Beispiel:
+ *   const view = lookAtMatrix(
+ *     new Vec3(250, 120, -250),  // Kamera von rechts oben
+ *     new Vec3(0, 0, 100),       // Blick auf die Szene
+ *     new Vec3(0, 1, 0),         // Y zeigt nach oben
+ *   );
+ */
+export function lookAtMatrix(cameraPos: Vec3, target: Vec3, up: Vec3): Matrix4x4 {
+  // forward zeigt von der Kamera zum Target (Blickrichtung = +Z in Kamera-Koordinaten)
+  const forward = target.sub(cameraPos).normalize();
+  const right = forward.cross(up).normalize();
+  const realUp = right.cross(forward);
+
+  // View-Matrix: Kamera blickt in +Z-Richtung (kompatibel mit project())
+  return [
+    [right.x,        right.y,        right.z,       -right.dot(cameraPos)],
+    [realUp.x,       realUp.y,       realUp.z,      -realUp.dot(cameraPos)],
+    [forward.x,      forward.y,      forward.z,     -forward.dot(cameraPos)],
+    [0,              0,              0,              1],
+  ];
+}
+
 /** PROJEKTION (3D → 2D Bildschirm)
  * Projiziert einen 3D-Punkt auf den Bildschirm
  * @param fov - Field of View (Kamerawinkel)

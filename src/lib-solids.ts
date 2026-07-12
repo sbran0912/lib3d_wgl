@@ -184,6 +184,86 @@ export function drawCube(
 
 /*
 -----------------------------------------------------------------
+Quader-Erstellung & -Darstellung
+-----------------------------------------------------------------
+*/
+
+/**
+ * Erzeugt die 12 Kanten eines Quaders als Liste von Vec3-Paaren.
+ *
+ * @param w   Breite (x-Richtung)
+ * @param h   Höhe   (y-Richtung)
+ * @param d   Tiefe  (z-Richtung)
+ * @returns Array mit 12 Einträgen, jeder ein [start, end]-Paar
+ */
+export function createBox(w: number, h: number, d: number): l3d.Vec3[][] {
+  const hw = w / 2;
+  const hh = h / 2;
+  const hd = d / 2;
+
+  // 8 Eckpunkte
+  const V = [
+    new l3d.Vec3(-hw, -hh, -hd), // 0: vorne-unten-links
+    new l3d.Vec3( hw, -hh, -hd), // 1: vorne-unten-rechts
+    new l3d.Vec3( hw,  hh, -hd), // 2: vorne-oben-rechts
+    new l3d.Vec3(-hw,  hh, -hd), // 3: vorne-oben-links
+    new l3d.Vec3(-hw, -hh,  hd), // 4: hinten-unten-links
+    new l3d.Vec3( hw, -hh,  hd), // 5: hinten-unten-rechts
+    new l3d.Vec3( hw,  hh,  hd), // 6: hinten-oben-rechts
+    new l3d.Vec3(-hw,  hh,  hd), // 7: hinten-oben-links
+  ];
+
+  // 12 Kanten als [start, end]
+  return [
+    [V[0], V[1]], [V[1], V[2]], [V[2], V[3]], [V[3], V[0]], // unten + oben vorn
+    [V[4], V[5]], [V[5], V[6]], [V[6], V[7]], [V[7], V[4]], // unten + oben hinten
+    [V[0], V[4]], [V[1], V[5]], [V[2], V[6]], [V[3], V[7]], // vertikal
+  ];
+}
+
+/**
+ * Zeichnet einen Quader als Drahtgitter mit Helligkeits-Shading.
+ *
+ * @param boxEdges   Von createBox() erzeugtes Kanten-Array (12 Paare)
+ * @param matrix     4x4-Transformationsmatrix
+ * @param fov        Kamera-Brennweite
+ * @param tint       Farbe als { r, g, b } (0-255), Standard: magenta-weiß
+ */
+export function drawBox(
+  boxEdges: l3d.Vec3[][],
+  matrix: l3d.Matrix4x4,
+  fov: number,
+  tint: { r: number; g: number; b: number } = { r: 220, g: 180, b: 255 },
+): void {
+  // Alle Punkte transformieren & projizieren
+  const edges = boxEdges.map(([a, b]) => ({
+    p1: l3d.project(fov, a.transform(matrix)),
+    p2: l3d.project(fov, b.transform(matrix)),
+  }));
+
+  // s-Bereich für Helligkeitsnormalisierung
+  const sVals = edges.flatMap((e) => [e.p1.s, e.p2.s]);
+  const sMin = Math.min(...sVals);
+  const sMax = Math.max(...sVals);
+  const sRange = sMax - sMin || 1;
+
+  wgl.setEffect("flat");
+  wgl.strokeWidth(1.2);
+
+  for (const { p1, p2 } of edges) {
+    const t = ((p1.s + p2.s) / 2 - sMin) / sRange;
+    const brightness = Math.round(60 + t * 195);
+    wgl.strokeColor(
+      Math.round((brightness * tint.r) / 255),
+      Math.round((brightness * tint.g) / 255),
+      Math.round((brightness * tint.b) / 255),
+    );
+    wgl.line(p1.x, p1.y, p2.x, p2.y);
+  }
+}
+
+/*
+-----------------------------------------------------------------
 Zylinder-Erstellung & -Darstellung
 -----------------------------------------------------------------
 */
