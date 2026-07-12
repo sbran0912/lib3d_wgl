@@ -394,3 +394,77 @@ export class Cylinder extends Solid {
     }
   }
 }
+
+/*
+-----------------------------------------------------------------
+Bodengitter
+-----------------------------------------------------------------
+*/
+
+/**
+ * Bodengitter in der XZ-Ebene (Y=0) als räumliche Orientierungshilfe.
+ * Kann nicht bewegt/rotiert werden – dafür einfach und leichtgewichtig.
+ */
+export class Grid {
+  edges: [l3d.Vec3, l3d.Vec3][];
+  tint: { r: number; g: number; b: number };
+
+  /**
+   * @param size       Seitenlänge des Gitters (z.B. 600)
+   * @param divisions  Anzahl Unterteilungen pro Achse (z.B. 12 → 12×12 Zellen)
+   * @param tint       Farbe als { r, g, b } (0-255), Standard: neutral-grau
+   */
+  constructor(
+    size: number,
+    divisions: number,
+    tint: { r: number; g: number; b: number } = { r: 180, g: 180, b: 200 },
+  ) {
+    this.tint = tint;
+    this.edges = [];
+
+    const half = size / 2;
+    const step = size / divisions;
+
+    // Linien parallel zur X-Achse (Z = konstant)
+    for (let i = 0; i <= divisions; i++) {
+      const z = -half + i * step;
+      this.edges.push([
+        new l3d.Vec3(-half, 0, z),
+        new l3d.Vec3( half, 0, z),
+      ]);
+    }
+
+    // Linien parallel zur Z-Achse (X = konstant)
+    for (let i = 0; i <= divisions; i++) {
+      const x = -half + i * step;
+      this.edges.push([
+        new l3d.Vec3(x, 0, -half),
+        new l3d.Vec3(x, 0,  half),
+      ]);
+    }
+  }
+
+  /** Bodengitter mit aktueller Ansicht zeichnen */
+  draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
+    // Alle Kanten transformieren & projizieren
+    const projected = this.edges.map(([a, b]) => ({
+      p1: l3d.project(fov, a.transform(viewMatrix)),
+      p2: l3d.project(fov, b.transform(viewMatrix)),
+    }));
+
+    // s-Bereich für Helligkeitsnormalisierung
+    const sVals = projected.flatMap((e) => [e.p1.s, e.p2.s]);
+    const sMin = Math.min(...sVals);
+    const sMax = Math.max(...sVals);
+    const sRange = sMax - sMin || 1;
+
+    wgl.setEffect("flat");
+    wgl.strokeWidth(0.8);
+
+    for (const { p1, p2 } of projected) {
+      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+      wgl.strokeColor(c.r, c.g, c.b);
+      wgl.line(p1.x, p1.y, p2.x, p2.y);
+    }
+  }
+}
