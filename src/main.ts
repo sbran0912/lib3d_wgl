@@ -8,7 +8,7 @@ const FOV = 300;
 
 // === Kamera-Perspektive ===
 // Position der Kamera im Raum – einfach hier im Code ändern für andere Blickwinkel
-const CAM_POS    = new l3d.Vec3(300, 50, 0);  // leicht von rechts oben (Standard)
+const CAM_POS    = new l3d.Vec3(0, 50, -50);  // leicht von rechts oben (Standard)
 const CAM_TARGET = new l3d.Vec3(0, 0, 100);        // Ziel = Mitte der Szene
 const CAM_UP     = new l3d.Vec3(0, 1, 0);           // Y zeigt nach oben
 
