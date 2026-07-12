@@ -368,3 +368,184 @@ export function drawCylinder(
     }
   }
 }
+
+/*
+-----------------------------------------------------------------
+OOP-Klassen mit move() / rotate() / draw()
+-----------------------------------------------------------------
+*/
+
+/**
+ * Kugel als Klasse mit eigener Position, Rotation und Farbe.
+ */
+export class Sphere {
+  points: l3d.Vec3[][];
+  pos: l3d.Vec3;
+  rotation: l3d.Vec3;
+  tint: { r: number; g: number; b: number };
+
+  constructor(
+    radius: number,
+    segments: number,
+    rings: number,
+    tint: { r: number; g: number; b: number },
+  ) {
+    this.points = createSphere(radius, segments, rings);
+    this.pos = new l3d.Vec3(0, 0, 0);
+    this.rotation = new l3d.Vec3(0, 0, 0);
+    this.tint = tint;
+  }
+
+  /** Absolute Position setzen */
+  move(x: number, y: number, z: number) {
+    this.pos = new l3d.Vec3(x, y, z);
+  }
+
+  /** Absolute Rotation setzen (Winkel in Rad) */
+  rotate(ax: number, ay: number, az: number) {
+    this.rotation = new l3d.Vec3(ax, ay, az);
+  }
+
+  /** Objekt mit aktueller Position/Rotation zeichnen */
+  draw(viewMatrix: l3d.Matrix4x4, fov: number) {
+    const M = l3d.multMatrix(
+      viewMatrix,
+      l3d.multMatrix(
+        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+      ),
+    );
+    drawSphere(this.points, M, fov, this.tint);
+  }
+}
+
+/**
+ * Quader als Klasse mit eigener Position, Rotation und Farbe.
+ */
+export class Box {
+  edges: l3d.Vec3[][];
+  pos: l3d.Vec3;
+  rotation: l3d.Vec3;
+  tint: { r: number; g: number; b: number };
+
+  constructor(
+    w: number,
+    h: number,
+    d: number,
+    tint: { r: number; g: number; b: number },
+  ) {
+    this.edges = createBox(w, h, d);
+    this.pos = new l3d.Vec3(0, 0, 0);
+    this.rotation = new l3d.Vec3(0, 0, 0);
+    this.tint = tint;
+  }
+
+  /** Absolute Position setzen */
+  move(x: number, y: number, z: number) {
+    this.pos = new l3d.Vec3(x, y, z);
+  }
+
+  /** Absolute Rotation setzen (Winkel in Rad) */
+  rotate(ax: number, ay: number, az: number) {
+    this.rotation = new l3d.Vec3(ax, ay, az);
+  }
+
+  /** Objekt mit aktueller Position/Rotation zeichnen */
+  draw(viewMatrix: l3d.Matrix4x4, fov: number) {
+    const M = l3d.multMatrix(
+      viewMatrix,
+      l3d.multMatrix(
+        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+      ),
+    );
+    drawBox(this.edges, M, fov, this.tint);
+  }
+}
+
+/**
+ * Würfel als Klasse mit eigener Position, Rotation und Farbe.
+ */
+export class Cube {
+  edges: l3d.Vec3[][];
+  pos: l3d.Vec3;
+  rotation: l3d.Vec3;
+  tint: { r: number; g: number; b: number };
+
+  constructor(
+    size: number,
+    tint: { r: number; g: number; b: number },
+  ) {
+    this.edges = createCube(size);
+    this.pos = new l3d.Vec3(0, 0, 0);
+    this.rotation = new l3d.Vec3(0, 0, 0);
+    this.tint = tint;
+  }
+
+  /** Absolute Position setzen */
+  move(x: number, y: number, z: number) {
+    this.pos = new l3d.Vec3(x, y, z);
+  }
+
+  /** Absolute Rotation setzen (Winkel in Rad) */
+  rotate(ax: number, ay: number, az: number) {
+    this.rotation = new l3d.Vec3(ax, ay, az);
+  }
+
+  /** Objekt mit aktueller Position/Rotation zeichnen */
+  draw(viewMatrix: l3d.Matrix4x4, fov: number) {
+    const M = l3d.multMatrix(
+      viewMatrix,
+      l3d.multMatrix(
+        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+      ),
+    );
+    drawCube(this.edges, M, fov, this.tint);
+  }
+}
+
+/**
+ * Zylinder als Klasse mit eigener Position, Rotation und Farbe.
+ */
+export class Cylinder {
+  points: l3d.Vec3[][];
+  pos: l3d.Vec3;
+  rotation: l3d.Vec3;
+  tint: { r: number; g: number; b: number };
+
+  constructor(
+    radius: number,
+    height: number,
+    segments: number,
+    tint: { r: number; g: number; b: number },
+    rings: number = 2,
+  ) {
+    this.points = createCylinder(radius, height, segments, rings);
+    this.pos = new l3d.Vec3(0, 0, 0);
+    this.rotation = new l3d.Vec3(0, 0, 0);
+    this.tint = tint;
+  }
+
+  /** Absolute Position setzen */
+  move(x: number, y: number, z: number) {
+    this.pos = new l3d.Vec3(x, y, z);
+  }
+
+  /** Absolute Rotation setzen (Winkel in Rad) */
+  rotate(ax: number, ay: number, az: number) {
+    this.rotation = new l3d.Vec3(ax, ay, az);
+  }
+
+  /** Objekt mit aktueller Position/Rotation zeichnen */
+  draw(viewMatrix: l3d.Matrix4x4, fov: number) {
+    const M = l3d.multMatrix(
+      viewMatrix,
+      l3d.multMatrix(
+        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+      ),
+    );
+    drawCylinder(this.points, M, fov, this.tint);
+  }
+}
