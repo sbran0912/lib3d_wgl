@@ -26,7 +26,7 @@ const box = new Box(300, 40, 200, { r: 200, g: 150, b: 255 });
 
 // === Statische Positionen (einmalig setzen, nicht jedes Frame) ===
 sphere1.move(0, 0, 100);
-box.move(0, -100, 100);
+box.move(100, -100, 100);
 
 let angleX = 0;
 let angleY = 0;
@@ -47,6 +47,13 @@ function draw() {
   const oz = 100 + Math.sin(orbitAngle) * 200;
   sphere2.move(ox, 0, oz);
   sphere2.rotate(angleX * 1.5, angleY * 0.7, 0);
+
+  // Helligkeit entfernungsabhängig (sehr subtil):
+  // Distanz ~70..350 → brightness 1.0..0.6
+  const distToCam = new l3d.Vec3(ox, 0, oz).distanceTo(CAM_POS);
+  const t = Math.min(1, Math.max(0, (distToCam - 70) / 280));
+  sphere2.brightness = 1.0 - t * 0.4;
+
   sphere2.draw(viewMatrix, FOV);
 
   // === Quader (Grundplatte, lila) ===

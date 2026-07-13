@@ -28,9 +28,11 @@ function _calcBrightness(
   sMin: number,
   sRange: number,
   tint: { r: number; g: number; b: number },
+  brightness = 1,
 ): { r: number; g: number; b: number } {
   const t = (s - sMin) / sRange;
-  const b = Math.round(60 + t * 195);
+  // Grundhelligkeit (60..255) * brightness-Faktor
+  const b = Math.round((60 + t * 195) * brightness);
   return {
     r: Math.round((b * tint.r) / 255),
     g: Math.round((b * tint.g) / 255),
@@ -52,11 +54,14 @@ abstract class Solid {
   pos: l3d.Vec3;
   rotation: l3d.Vec3;
   tint: { r: number; g: number; b: number };
+  /** Helligkeitsfaktor (0 = schwarz, 1 = volle Farbe). Default: 1 */
+  brightness: number;
 
-  constructor(tint: { r: number; g: number; b: number }) {
+  constructor(tint: { r: number; g: number; b: number }, brightness = 1) {
     this.pos = new l3d.Vec3(0, 0, 0);
     this.rotation = new l3d.Vec3(0, 0, 0);
     this.tint = tint;
+    this.brightness = brightness;
   }
 
   /** Absolute Position setzen */
@@ -141,7 +146,7 @@ export class Sphere extends Solid {
       for (let s = 0; s < SEGMENTS; s++) {
         const p1 = proj[r][s];
         const p2 = proj[r][s + 1];
-        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
         wgl.strokeColor(c.r, c.g, c.b);
         wgl.line(p1.x, p1.y, p2.x, p2.y);
       }
@@ -152,7 +157,7 @@ export class Sphere extends Solid {
       for (let r = 0; r < RINGS; r++) {
         const p1 = proj[r][s];
         const p2 = proj[r + 1][s];
-        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
         wgl.strokeColor(c.r, c.g, c.b);
         wgl.line(p1.x, p1.y, p2.x, p2.y);
       }
@@ -223,7 +228,7 @@ export class Cube extends Solid {
     wgl.strokeWidth(1.2);
 
     for (const { p1, p2 } of projected) {
-      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
       wgl.strokeColor(c.r, c.g, c.b);
       wgl.line(p1.x, p1.y, p2.x, p2.y);
     }
@@ -300,7 +305,7 @@ export class Box extends Solid {
     wgl.strokeWidth(1.2);
 
     for (const { p1, p2 } of projected) {
-      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
       wgl.strokeColor(c.r, c.g, c.b);
       wgl.line(p1.x, p1.y, p2.x, p2.y);
     }
@@ -376,7 +381,7 @@ export class Cylinder extends Solid {
       for (let s = 0; s < SEGMENTS; s++) {
         const p1 = proj[r][s];
         const p2 = proj[r][s + 1];
-        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
         wgl.strokeColor(c.r, c.g, c.b);
         wgl.line(p1.x, p1.y, p2.x, p2.y);
       }
@@ -387,7 +392,7 @@ export class Cylinder extends Solid {
       for (let r = 0; r < RINGS; r++) {
         const p1 = proj[r][s];
         const p2 = proj[r + 1][s];
-        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+        const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
         wgl.strokeColor(c.r, c.g, c.b);
         wgl.line(p1.x, p1.y, p2.x, p2.y);
       }
@@ -462,7 +467,7 @@ export class Grid {
     wgl.strokeWidth(0.8);
 
     for (const { p1, p2 } of projected) {
-      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
       wgl.strokeColor(c.r, c.g, c.b);
       wgl.line(p1.x, p1.y, p2.x, p2.y);
     }
