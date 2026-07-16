@@ -49,10 +49,10 @@ function draw() {
   sphere2.rotate(angleX * 1.5, angleY * 0.7, 0);
 
   // Helligkeit entfernungsabhängig (sehr subtil):
-  // Distanz ~70..350 → brightness 1.0..0.6
+  // Distanz ~70..350 → brightness 1.0..0.5
   const distToCam = new l3d.Vec3(ox, 0, oz).distanceTo(CAM_POS);
   const t = Math.min(1, Math.max(0, (distToCam - 70) / 280));
-  sphere2.brightness = 1.0 - t * 0.4;
+  sphere2.brightness = 1.0 - t * 0.5;
 
   sphere2.draw(viewMatrix, FOV);
 

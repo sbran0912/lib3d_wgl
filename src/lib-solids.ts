@@ -467,6 +467,58 @@ export class Grid {
     wgl.strokeWidth(0.8);
 
     for (const { p1, p2 } of projected) {
+      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
+      wgl.strokeColor(c.r, c.g, c.b);
+      wgl.line(p1.x, p1.y, p2.x, p2.y);
+    }
+  }
+}
+
+/*
+-----------------------------------------------------------------
+Linie
+-----------------------------------------------------------------
+*/
+
+/**
+ * Eine einzelne Linie mit Anfangs- und Endpunkt.
+ * Erbt von Solid und unterstützt move(), rotate(), tint und brightness.
+ */
+export class Line extends Solid {
+  edges: [l3d.Vec3, l3d.Vec3][];
+
+  constructor(
+    start: l3d.Vec3,
+    end: l3d.Vec3,
+    tint: { r: number; g: number; b: number },
+  ) {
+    super(tint);
+    this.edges = [[start, end]];
+  }
+
+  draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
+    const M = l3d.multMatrix(
+      viewMatrix,
+      l3d.multMatrix(
+        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+      ),
+    );
+
+    const projected = this.edges.map(([a, b]) => ({
+      p1: l3d.project(fov, a.transform(M)),
+      p2: l3d.project(fov, b.transform(M)),
+    }));
+
+    const sVals = projected.flatMap((e) => [e.p1.s, e.p2.s]);
+    const sMin = Math.min(...sVals);
+    const sMax = Math.max(...sVals);
+    const sRange = sMax - sMin || 1;
+
+    wgl.setEffect("flat");
+    wgl.strokeWidth(1.2);
+
+    for (const { p1, p2 } of projected) {
       const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
       wgl.strokeColor(c.r, c.g, c.b);
       wgl.line(p1.x, p1.y, p2.x, p2.y);
