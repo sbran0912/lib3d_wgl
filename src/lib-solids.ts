@@ -101,6 +101,47 @@ abstract class Solid {
 
 /*
 -----------------------------------------------------------------
+Punkt (Point)
+-----------------------------------------------------------------
+*/
+
+/**
+ * Ein einzelner Punkt im 3D-Raum.
+ * Kann positioniert (move) aber nicht sinnvoll rotiert werden.
+ * Zeichnet sich als kleiner, farbiger Pixel auf der Leinwand.
+ */
+export class Point extends Solid {
+  constructor(
+    tint: { r: number; g: number; b: number },
+    brightness = 1,
+  ) {
+    super(tint, brightness);
+  }
+
+  getWorldPoints(): l3d.Vec3[] {
+    return [new l3d.Vec3(0, 0, 0).transform(this.worldMatrix)];
+  }
+
+  draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
+    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    const p = l3d.project(fov, new l3d.Vec3(0, 0, 0).transform(M));
+
+    // Helligkeit direkt aus p.s (bei einem Punkt ergibt Normalisierung keinen Sinn)
+    const b = Math.round(Math.min(255, (p.s * 255) * this.brightness));
+    const c = {
+      r: Math.round((b * this.tint.r) / 255),
+      g: Math.round((b * this.tint.g) / 255),
+      b: Math.round((b * this.tint.b) / 255),
+    };
+    wgl.setEffect("flat");
+    wgl.strokeWidth(1.2);
+    wgl.strokeColor(c.r, c.g, c.b);
+    wgl.point(p.x, p.y);
+  }
+}
+
+/*
+-----------------------------------------------------------------
 Kugel
 -----------------------------------------------------------------
 */

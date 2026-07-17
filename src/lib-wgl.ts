@@ -351,6 +351,13 @@ export function background(...color: (string | number)[]) {
    ÖFFENTLICHE API – Shapes
 ================================================================= */
 
+/** Punkt bei (x,y) mit aktueller strokeColor und strokeWidth. */
+export function point(x: number, y: number) {
+  applyUniforms(x, y, 0, true);
+  gl.lineWidth(state.lineW);
+  drawVertices(new Float32Array([x, y]), gl.POINTS);
+}
+
 /** Linie von (x1,y1) nach (x2,y2). */
 export function line(x1: number, y1: number, x2: number, y2: number) {
   const { cx, cy, r } = shapeMetrics([x1, y1, x2, y2]);

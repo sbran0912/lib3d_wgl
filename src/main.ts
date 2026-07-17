@@ -1,6 +1,6 @@
 import * as wgl from "./lib-wgl.ts";
 import * as l3d from "./lib-3d.ts";
-import { Sphere, Box, Grid } from "./lib-solids.ts";
+import { Sphere, Box, Grid, Point } from "./lib-solids.ts";
 
 const SCREEN_W = 600;
 const SCREEN_H = 400;
@@ -14,8 +14,16 @@ const CAM_UP     = new l3d.Vec3(0, 1, 0);           // Y zeigt nach oben
 
 const viewMatrix = l3d.lookAtMatrix(CAM_POS, CAM_TARGET, CAM_UP);
 
+// Einzelner Punkt
+const point = new Point({ r: 255, g: 0, b: 0 });
+point.move(-80, 50, 0);
+
+const point2 = new Point({ r: 0, g: 255, b: 0 });
+point2.move(0, 50, -250);
+
+
 // Zwei Kugeln mit unterschiedlicher Größe
-const sphere1 = new Sphere(100, 20, 12, { r: 100, g: 180, b: 255 });
+const sphere1 = new Sphere(100, 10, 10, { r: 100, g: 180, b: 255 });
 const sphere2 = new Sphere(60, 16, 10, { r: 255, g: 180, b: 80 });
 
 // Bodengitter (500×500, 10×10 Zellen)
@@ -38,6 +46,10 @@ function draw() {
   // === Bodengitter ===
   grid.draw(viewMatrix, FOV);
 
+  // === Punkt (gelb) ===
+  point.draw(viewMatrix, FOV);
+  point2.draw(viewMatrix, FOV);
+
   // === Kugel 1 (groß, blau) – mittig ===
   sphere1.rotate(angleX * 0.8, angleY * 1.2, 0);
   sphere1.draw(viewMatrix, FOV);
@@ -55,7 +67,7 @@ function draw() {
   sphere2.brightness = 1.0 - t * 0.5;
 
   sphere2.draw(viewMatrix, FOV);
-  //console.log(sphere2.getWorldPoints());
+  //console.log(sphere1.getWorldPoints());
 
   // === Quader (Grundplatte, lila) ===
   box.rotate(0, angleY * 0.5, 0);
