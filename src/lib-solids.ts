@@ -56,22 +56,40 @@ abstract class Solid {
   tint: { r: number; g: number; b: number };
   /** Helligkeitsfaktor (0 = schwarz, 1 = volle Farbe). Default: 1 */
   brightness: number;
+  /** Transformationsmatrix (Weltkoordinaten) – wird von move()/rotate() aktualisiert */
+  protected worldMatrix: l3d.Matrix4x4;
 
   constructor(tint: { r: number; g: number; b: number }, brightness = 1) {
     this.pos = new l3d.Vec3(0, 0, 0);
     this.rotation = new l3d.Vec3(0, 0, 0);
     this.tint = tint;
     this.brightness = brightness;
+    this.worldMatrix = [
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 1],
+    ];
   }
 
   /** Absolute Position setzen */
   move(x: number, y: number, z: number): void {
     this.pos = new l3d.Vec3(x, y, z);
+    this.updateTransform();
   }
 
   /** Absolute Rotation setzen (Winkel in Rad) */
   rotate(ax: number, ay: number, az: number): void {
     this.rotation = new l3d.Vec3(ax, ay, az);
+    this.updateTransform();
+  }
+
+  /** Transformationsmatrix aus Position und Rotation neu berechnen */
+  updateTransform(): void {
+    this.worldMatrix = l3d.multMatrix(
+      l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
+      l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
+    );
   }
 
   /** Objekt mit aktueller Position/Rotation zeichnen */
@@ -116,13 +134,7 @@ export class Sphere extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(
-      viewMatrix,
-      l3d.multMatrix(
-        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
-        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
-      ),
-    );
+    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
     const RINGS = this.points.length - 1;
     const SEGMENTS = this.points[0].length - 1;
@@ -204,13 +216,7 @@ export class Cube extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(
-      viewMatrix,
-      l3d.multMatrix(
-        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
-        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
-      ),
-    );
+    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
     // Alle Punkte transformieren & projizieren
     const projected = this.edges.map(([a, b]) => ({
@@ -281,13 +287,7 @@ export class Box extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(
-      viewMatrix,
-      l3d.multMatrix(
-        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
-        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
-      ),
-    );
+    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
     // Alle Punkte transformieren & projizieren
     const projected = this.edges.map(([a, b]) => ({
@@ -351,13 +351,7 @@ export class Cylinder extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(
-      viewMatrix,
-      l3d.multMatrix(
-        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
-        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
-      ),
-    );
+    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
     const RINGS = this.points.length - 1;
     const SEGMENTS = this.points[0].length - 1;
@@ -468,58 +462,6 @@ export class Grid {
 
     for (const { p1, p2 } of projected) {
       const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint);
-      wgl.strokeColor(c.r, c.g, c.b);
-      wgl.line(p1.x, p1.y, p2.x, p2.y);
-    }
-  }
-}
-
-/*
------------------------------------------------------------------
-Linie
------------------------------------------------------------------
-*/
-
-/**
- * Eine einzelne Linie mit Anfangs- und Endpunkt.
- * Erbt von Solid und unterstützt move(), rotate(), tint und brightness.
- */
-export class Line extends Solid {
-  edges: [l3d.Vec3, l3d.Vec3][];
-
-  constructor(
-    start: l3d.Vec3,
-    end: l3d.Vec3,
-    tint: { r: number; g: number; b: number },
-  ) {
-    super(tint);
-    this.edges = [[start, end]];
-  }
-
-  draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(
-      viewMatrix,
-      l3d.multMatrix(
-        l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
-        l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
-      ),
-    );
-
-    const projected = this.edges.map(([a, b]) => ({
-      p1: l3d.project(fov, a.transform(M)),
-      p2: l3d.project(fov, b.transform(M)),
-    }));
-
-    const sVals = projected.flatMap((e) => [e.p1.s, e.p2.s]);
-    const sMin = Math.min(...sVals);
-    const sMax = Math.max(...sVals);
-    const sRange = sMax - sMin || 1;
-
-    wgl.setEffect("flat");
-    wgl.strokeWidth(1.2);
-
-    for (const { p1, p2 } of projected) {
-      const c = _calcBrightness((p1.s + p2.s) / 2, sMin, sRange, this.tint, this.brightness);
       wgl.strokeColor(c.r, c.g, c.b);
       wgl.line(p1.x, p1.y, p2.x, p2.y);
     }
