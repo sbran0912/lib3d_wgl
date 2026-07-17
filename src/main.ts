@@ -55,10 +55,12 @@ function draw() {
   sphere2.brightness = 1.0 - t * 0.5;
 
   sphere2.draw(viewMatrix, FOV);
+  //console.log(sphere2.getWorldPoints());
 
   // === Quader (Grundplatte, lila) ===
   box.rotate(0, angleY * 0.5, 0);
   box.draw(viewMatrix, FOV);
+  //console.log(box.getWorldPoints());
 
   angleX += 0.005;
   angleY += 0.008;

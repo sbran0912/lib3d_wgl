@@ -92,6 +92,9 @@ abstract class Solid {
     );
   }
 
+  /** Gibt alle Geometrie-Punkte des Objekts in Weltkoordinaten zurück */
+  abstract getWorldPoints(): l3d.Vec3[];
+
   /** Objekt mit aktueller Position/Rotation zeichnen */
   abstract draw(viewMatrix: l3d.Matrix4x4, fov: number): void;
 }
@@ -131,6 +134,12 @@ export class Sphere extends Solid {
         );
       }
     }
+  }
+
+  getWorldPoints(): l3d.Vec3[] {
+    return this.points.flatMap(row =>
+      row.map(v => v.transform(this.worldMatrix))
+    );
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
@@ -215,6 +224,22 @@ export class Cube extends Solid {
     ];
   }
 
+  getWorldPoints(): l3d.Vec3[] {
+    // Eindeutige Eckpunkte der 12 Kanten
+    const unique: l3d.Vec3[] = [];
+    const seen = new Set<string>();
+    for (const [a, b] of this.edges) {
+      for (const v of [a, b]) {
+        const key = `${v.x},${v.y},${v.z}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(v.transform(this.worldMatrix));
+        }
+      }
+    }
+    return unique;
+  }
+
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
     const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
@@ -286,6 +311,21 @@ export class Box extends Solid {
     ];
   }
 
+  getWorldPoints(): l3d.Vec3[] {
+    const unique: l3d.Vec3[] = [];
+    const seen = new Set<string>();
+    for (const [a, b] of this.edges) {
+      for (const v of [a, b]) {
+        const key = `${v.x},${v.y},${v.z}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(v.transform(this.worldMatrix));
+        }
+      }
+    }
+    return unique;
+  }
+
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
     const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
 
@@ -348,6 +388,12 @@ export class Cylinder extends Solid {
         );
       }
     }
+  }
+
+  getWorldPoints(): l3d.Vec3[] {
+    return this.points.flatMap(row =>
+      row.map(v => v.transform(this.worldMatrix))
+    );
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
