@@ -19,7 +19,7 @@ const point = new Point({ r: 255, g: 0, b: 0 });
 point.move(-80, 50, 0);
 
 const point2 = new Point({ r: 0, g: 255, b: 0 });
-point2.move(0, 50, -250);
+point2.move(-80, 50, -250);
 
 
 // Zwei Kugeln mit unterschiedlicher Größe

@@ -136,6 +136,7 @@ export class Point extends Solid {
     wgl.setEffect("flat");
     wgl.strokeWidth(1.2);
     wgl.strokeColor(c.r, c.g, c.b);
+    wgl.pointSize(Math.max(2, p.s * 8));
     wgl.point(p.x, p.y);
   }
 }

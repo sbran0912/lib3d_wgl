@@ -22,13 +22,14 @@ Shader-Modi (setEffect):
 const VERT_SRC = `
   attribute vec2 aPos;
   uniform vec2  uResolution;
+  uniform float uPointSize;
   varying vec2  vPos;
 
   void main() {
     vPos = aPos;
     vec2 ndc = aPos / (uResolution * 0.5);
     gl_Position = vec4(ndc, 0.0, 1.0);
-    gl_PointSize = 4.0;
+    gl_PointSize = uPointSize;
   }
 `;
 
@@ -88,6 +89,7 @@ let prog: WebGLProgram;
 // Shader-Locations
 let locPos:        number;
 let locResolution: WebGLUniformLocation;
+let locPointSize:  WebGLUniformLocation;
 let locMode:       WebGLUniformLocation;
 let locColor:      WebGLUniformLocation;
 let locColor2:     WebGLUniformLocation;
@@ -256,12 +258,15 @@ export function init(w: number, h: number) {
 
   locPos        = gl.getAttribLocation (prog, "aPos");
   locResolution = gl.getUniformLocation(prog, "uResolution")!;
+  locPointSize  = gl.getUniformLocation(prog, "uPointSize")!;
   locMode       = gl.getUniformLocation(prog, "uMode")!;
   locColor      = gl.getUniformLocation(prog, "uColor")!;
   locColor2     = gl.getUniformLocation(prog, "uColor2")!;
   locTime       = gl.getUniformLocation(prog, "uTime")!;
   locCenter     = gl.getUniformLocation(prog, "uShapeCenter")!;
   locRadius     = gl.getUniformLocation(prog, "uShapeRadius")!;
+
+  gl.uniform1f(locPointSize, 4.0);
 
   gl.uniform2f(locResolution, w, h);
 
@@ -351,7 +356,12 @@ export function background(...color: (string | number)[]) {
    ÖFFENTLICHE API – Shapes
 ================================================================= */
 
-/** Punkt bei (x,y) mit aktueller strokeColor und strokeWidth. */
+/** Punktgröße in Pixeln setzen (betrifft point()-Zeichnung). */
+export function pointSize(px: number) {
+  gl.uniform1f(locPointSize, px);
+}
+
+/** Punkt bei (x,y) mit aktueller strokeColor, strokeWidth und pointSize. */
 export function point(x: number, y: number) {
   applyUniforms(x, y, 0, true);
   gl.lineWidth(state.lineW);
