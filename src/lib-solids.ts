@@ -56,40 +56,39 @@ abstract class Solid {
   tint: { r: number; g: number; b: number };
   /** Helligkeitsfaktor (0 = schwarz, 1 = volle Farbe). Default: 1 */
   brightness: number;
-  /** Transformationsmatrix (Weltkoordinaten) – wird von move()/rotate() aktualisiert */
+  /** Transformationsmatrix (Weltkoordinaten) – wird nur bei Bedarf neu berechnet (Dirty-Flag) */
   protected worldMatrix: l3d.Matrix4x4;
+  /** Merkt, ob sich pos/rotation geändert haben – worldMatrix muss neu berechnet werden */
+  private _dirty = true;
 
   constructor(tint: { r: number; g: number; b: number }, brightness = 1) {
     this.pos = new l3d.Vec3(0, 0, 0);
     this.rotation = new l3d.Vec3(0, 0, 0);
     this.tint = tint;
     this.brightness = brightness;
-    this.worldMatrix = [
-      [1, 0, 0, 0],
-      [0, 1, 0, 0],
-      [0, 0, 1, 0],
-      [0, 0, 0, 1],
-    ];
+    this.worldMatrix = l3d.identityMatrix();
   }
 
-  /** Absolute Position setzen */
+  /** Absolute Position setzen (worldMatrix wird erst bei Bedarf neu berechnet) */
   move(x: number, y: number, z: number): void {
     this.pos = new l3d.Vec3(x, y, z);
-    this.updateTransform();
+    this._dirty = true;
   }
 
-  /** Absolute Rotation setzen (Winkel in Rad) */
+  /** Absolute Rotation setzen (worldMatrix wird erst bei Bedarf neu berechnet) */
   rotate(ax: number, ay: number, az: number): void {
     this.rotation = new l3d.Vec3(ax, ay, az);
-    this.updateTransform();
+    this._dirty = true;
   }
 
-  /** Transformationsmatrix aus Position und Rotation neu berechnen */
-  updateTransform(): void {
+  /** Stellt sicher, dass worldMatrix aktuell ist (nur neu berechnen, wenn nötig) */
+  ensureTransform(): void {
+    if (!this._dirty) return;
     this.worldMatrix = l3d.multMatrix(
       l3d.translateMatrix(this.pos.x, this.pos.y, this.pos.z),
       l3d.rotateMatrix(this.rotation.x, this.rotation.y, this.rotation.z),
     );
+    this._dirty = false;
   }
 
   /** Gibt alle Geometrie-Punkte des Objekts in Weltkoordinaten zurück */
@@ -119,11 +118,13 @@ export class Point extends Solid {
   }
 
   getWorldPoints(): l3d.Vec3[] {
+    this.ensureTransform();
     return [new l3d.Vec3(0, 0, 0).transform(this.worldMatrix)];
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    this.ensureTransform();
+    const M = l3d.viewWorldMatrix(viewMatrix, this.worldMatrix);
     const p = l3d.project(fov, new l3d.Vec3(0, 0, 0).transform(M));
 
     // Helligkeit direkt aus p.s (bei einem Punkt ergibt Normalisierung keinen Sinn)
@@ -179,13 +180,15 @@ export class Sphere extends Solid {
   }
 
   getWorldPoints(): l3d.Vec3[] {
+    this.ensureTransform();
     return this.points.flatMap(row =>
       row.map(v => v.transform(this.worldMatrix))
     );
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    this.ensureTransform();
+    const M = l3d.viewWorldMatrix(viewMatrix, this.worldMatrix);
 
     const RINGS = this.points.length - 1;
     const SEGMENTS = this.points[0].length - 1;
@@ -267,6 +270,7 @@ export class Cube extends Solid {
   }
 
   getWorldPoints(): l3d.Vec3[] {
+    this.ensureTransform();
     // Eindeutige Eckpunkte der 12 Kanten
     const unique: l3d.Vec3[] = [];
     const seen = new Set<string>();
@@ -283,7 +287,8 @@ export class Cube extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    this.ensureTransform();
+    const M = l3d.viewWorldMatrix(viewMatrix, this.worldMatrix);
 
     // Alle Punkte transformieren & projizieren
     const projected = this.edges.map(([a, b]) => ({
@@ -354,6 +359,7 @@ export class Box extends Solid {
   }
 
   getWorldPoints(): l3d.Vec3[] {
+    this.ensureTransform();
     const unique: l3d.Vec3[] = [];
     const seen = new Set<string>();
     for (const [a, b] of this.edges) {
@@ -369,7 +375,8 @@ export class Box extends Solid {
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    this.ensureTransform();
+    const M = l3d.viewWorldMatrix(viewMatrix, this.worldMatrix);
 
     // Alle Punkte transformieren & projizieren
     const projected = this.edges.map(([a, b]) => ({
@@ -433,13 +440,15 @@ export class Cylinder extends Solid {
   }
 
   getWorldPoints(): l3d.Vec3[] {
+    this.ensureTransform();
     return this.points.flatMap(row =>
       row.map(v => v.transform(this.worldMatrix))
     );
   }
 
   draw(viewMatrix: l3d.Matrix4x4, fov: number): void {
-    const M = l3d.multMatrix(viewMatrix, this.worldMatrix);
+    this.ensureTransform();
+    const M = l3d.viewWorldMatrix(viewMatrix, this.worldMatrix);
 
     const RINGS = this.points.length - 1;
     const SEGMENTS = this.points[0].length - 1;

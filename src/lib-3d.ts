@@ -161,6 +161,23 @@ export function multMatrix(a: Matrix4x4, b: Matrix4x4): Matrix4x4 {
   return result;
 }
 
+/** 4x4 Identitätsmatrix */
+export function identityMatrix(): Matrix4x4 {
+  return [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1],
+  ];
+}
+
+/** Kombiniert View- und World-Matrix (view × world)
+ *  Explizite Benennung macht die Absicht im draw()-Aufruf klarer.
+ */
+export function viewWorldMatrix(view: Matrix4x4, world: Matrix4x4): Matrix4x4 {
+  return multMatrix(view, world);
+}
+
 /** LOOKAT-MATRIX (View-Matrix)
  * Erzeugt eine 4x4-Matrix, die Weltkoordinaten in Kamerakoordinaten transformiert.
  *
